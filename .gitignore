@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+/transport-catalogue/cpp-tran.49DE0807/x64/Debug
+/transport-catalogue/x64/Debug
+/transport-catalogue/.vs/cpp-transport-catalogue
+/transport-catalogue/cpp-transport-catalogue.sln
+/transport-catalogue/cpp-transport-catalogue.vcxproj
+/transport-catalogue/cpp-transport-catalogue.vcxproj.filters
+/transport-catalogue/cpp-transport-catalogue.vcxproj.user
+/transport-catalogue/tests.cpp
+/transport-catalogue/tests.h
