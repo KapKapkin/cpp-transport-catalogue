@@ -49,10 +49,16 @@ namespace transport_catalogue {
 
 		size_t GetUniqueStopsNum(std::string_view busname) const;
 
+		void SetDistance(std::string_view stopname1, std::string_view stopname2, double distance);
+		int GetDistance(std::string_view stopname1, std::string_view stopname2) const;
 
 	private:
-		struct CompareBusesPtrs {
-			bool operator() (std::string_view lhs, std::string_view rhs) const;
+
+		struct StopPairHash {
+			size_t operator() (std::pair<Stop*, Stop*> stop_pair) const {
+				static const int x = 43;
+				return std::hash<std::string>{}(stop_pair.first->name_) + std::hash<std::string>{}(stop_pair.second->name_) * x;
+			}
 		};
 
 		std::deque<Bus> buses_;
@@ -61,7 +67,14 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, Bus*> busname_to_bus_;
 		std::unordered_map<std::string_view, Stop*> stopname_to_stop_;
 
-		std::unordered_map<std::string_view, std::set<std::string_view, CompareBusesPtrs>> stop_to_busnames_;
+		std::unordered_map<std::pair<Stop*, Stop*>, int, StopPairHash> stops_to_distance_;
+
+		std::unordered_map<std::string_view, std::set<std::string_view>> stop_to_busnames_;
 	};
+
+	namespace detail {
+		std::string_view Trim(std::string_view string);
+		std::vector<std::string_view> Split(std::string_view string, char delim);
+	}
 }
 

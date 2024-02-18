@@ -2,9 +2,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <iterator>
 #include <string_view>
 #include <string>
+
 
 namespace transport_catalogue {
     namespace input {
@@ -29,34 +31,7 @@ namespace transport_catalogue {
         /**
          * Удаляет пробелы в начале и конце строки
          */
-        std::string_view Trim(std::string_view string) {
-            const auto start = string.find_first_not_of(' ');
-            if (start == string.npos) {
-                return {};
-            }
-            return string.substr(start, string.find_last_not_of(' ') + 1 - start);
-        }
-
-        /**
-         * Разбивает строку string на n строк, с помощью указанного символа-разделителя delim
-         */
-        std::vector<std::string_view> Split(std::string_view string, char delim) {
-            std::vector<std::string_view> result;
-
-            size_t pos = 0;
-            while ((pos = string.find_first_not_of(' ', pos)) < string.length()) {
-                auto delim_pos = string.find(delim, pos);
-                if (delim_pos == string.npos) {
-                    delim_pos = string.size();
-                }
-                if (auto substr = Trim(string.substr(pos, delim_pos - pos)); !substr.empty()) {
-                    result.push_back(substr);
-                }
-                pos = delim_pos + 1;
-            }
-
-            return result;
-        }
+        
 
         /**
          * Парсит маршрут.
@@ -65,9 +40,9 @@ namespace transport_catalogue {
          */
         std::vector<std::string_view> ParseRoute(std::string_view route) {
             if (route.find('>') != route.npos) {
-                return Split(route, '>');
+                return detail::Split(route, '>');
             }
-            auto stops = Split(route, '-');
+            auto stops = detail::Split(route, '-');
             std::vector<std::string_view> results(stops.begin(), stops.end());
             results.insert(results.end(), std::next(stops.rbegin()), stops.rend());
 
@@ -102,6 +77,27 @@ namespace transport_catalogue {
             }
         }
 
+        std::vector<std::pair<std::string_view, double>> ParseDistance(std::string_view str) {
+            std::vector<std::pair<std::string_view, double>> res;
+            std::vector<std::string_view> splited_info = detail::Split(str, ',');
+
+            if (splited_info.size() <= 2) {
+                return res;
+            }
+
+            for (auto it = splited_info.begin() + 2; it != splited_info.end(); it++) {
+                auto not_space1 = it->find_first_not_of(' ');
+                auto not_space2 = it->find_first_not_of(' ', it->find_first_of(' ', not_space1));
+                auto not_space3 = it->find_first_not_of(' ', it->find_first_of(' ', not_space2));
+
+                double distance = std::stod(std::string(it->substr(not_space1)));
+                std::string_view stop = it->substr(not_space3);
+                res.push_back({ stop, distance });
+            }
+
+            return res;
+        }
+
 
         void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
             for (const auto& command : commands_) {
@@ -118,9 +114,30 @@ namespace transport_catalogue {
                     }
                 }
             }
+
+            for (const auto& command : commands_) {
+                if (command.command == "Stop") {
+                    auto distance_info = ParseDistance(command.description);
+                    for (const auto& info : distance_info) {
+                        catalogue.SetDistance(command.id, info.first, info.second);
+                    }
+                }
+            }
         }
+
+        void InputReader::Load(std::istream& in, TransportCatalogue& catalogue) {
+            int base_request_count;
+            in >> base_request_count >> std::ws;
+            for (int i = 0; i < base_request_count; ++i) {
+                std::string line;
+                getline(in, line);
+                ParseLine(line);
+            }
+            ApplyCommands(catalogue);
+        }
+
+
+
     }
 }
-/**
- * Парсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
- */
+

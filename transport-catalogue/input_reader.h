@@ -23,22 +23,18 @@ namespace transport_catalogue {
         };
 
         class InputReader {
-        public:
-            /**
-             * Парсит строку в структуру CommandDescription и сохраняет результат в commands_
-             */
-            void ParseLine(std::string_view line);
-
-
-
-            /**
-             * Наполняет данными транспортный справочник, используя команды из commands_
-             */
-            void ApplyCommands(TransportCatalogue& catalogue) const;  // TODO
-
+        public:            
+            void Load(std::istream& in, TransportCatalogue& catalogue);
         private:
+            void ParseLine(std::string_view line);
+            void ApplyCommands(TransportCatalogue& catalogue) const;
+
             std::vector<CommandDescription> commands_;
         };
+
+        CommandDescription ParseCommandDescription(std::string_view line);
+        std::vector<std::string_view> ParseRoute(std::string_view route);
+        std::vector<std::pair<std::string_view, double>> ParseDistance(std::string_view str);
     }
 }
 
