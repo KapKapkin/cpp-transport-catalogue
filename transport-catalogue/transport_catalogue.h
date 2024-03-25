@@ -9,27 +9,9 @@
 #include <set>
 
 #include "geo.h"
+#include "domain.h"
 
 namespace transport_catalogue {
-
-	struct Stop {
-
-		Stop() = default;
-		Stop(const std::string& name) : name_(name) {}
-		Stop(const std::string& name, const geo::Coordinates& coords) : name_(name), coords_(coords) {}
-
-		std::string name_;
-		geo::Coordinates coords_;
-	};
-
-	struct Bus {
-
-		Bus() = default;
-		Bus(const std::string& name) :name_(name) {}
-
-		std::string name_;
-		std::vector<Stop*> stops_;
-	};
 
 	class TransportCatalogue {
 	public:
@@ -39,15 +21,24 @@ namespace transport_catalogue {
 		TransportCatalogue& operator=(const TransportCatalogue&) = delete;
 
 		void AddBus(const std::string& busname);
+		void SetBusRouteType(std::string_view busname, RouteType type);
+
 		const Bus& GetBusByName(std::string_view busname) const;
+
+		double GetRouteLength(std::string_view busname) const;
+		double GetGeoRouteLength(std::string_view busname) const;
+		double GetRouteCurvature(std::string_view busname) const;
+		size_t GetStopCount(std::string_view busname) const;
+		size_t GetUniqueStopsCount(std::string_view busname) const;
 
 		void AddStop(const std::string& stopname, geo::Coordinates coords);
 		const Stop& GetStopByName(std::string_view stopname) const;
+		std::vector<Bus*> GetBuses() ;
 
 		void AddStopForBus(std::string_view busname, std::string_view stopname);
 		std::vector<std::string_view> GetBusnamesForStop(std::string_view stopname) const;
 
-		size_t GetUniqueStopsNum(std::string_view busname) const;
+		
 
 		void SetDistance(std::string_view stopname1, std::string_view stopname2, double distance);
 		int GetDistance(std::string_view stopname1, std::string_view stopname2) const;
@@ -57,7 +48,7 @@ namespace transport_catalogue {
 		struct StopPairHash {
 			size_t operator() (std::pair<Stop*, Stop*> stop_pair) const {
 				static const int x = 43;
-				return std::hash<std::string>{}(stop_pair.first->name_) + std::hash<std::string>{}(stop_pair.second->name_) * x;
+				return std::hash<std::string>{}(stop_pair.first->name_) + std::hash<std::string>{}(stop_pair.second->name_)* x;
 			}
 		};
 
@@ -77,4 +68,3 @@ namespace transport_catalogue {
 		std::vector<std::string_view> Split(std::string_view string, char delim);
 	}
 }
-
