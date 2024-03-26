@@ -145,10 +145,7 @@ namespace transport_catalogue {
 
 		private:
 
-            struct StopPtrComparator {
-                bool operator()(const Stop* lhs, const Stop* rhs) const { return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(), rhs->name_.begin(), rhs->name_.end()); };
-            };
-            std::set<Stop*, StopPtrComparator> stops_;
+            std::vector<geo::Coordinates> GetAllCoords();
 
 			void InitNotEmptyBusesAndStops(std::vector<Bus*> buses);
 
@@ -157,9 +154,16 @@ namespace transport_catalogue {
             void RenderBusLabels(detail::SphereProjector& projector);
             void RenderStopLabels(detail::SphereProjector& projector);
 
-            std::vector<geo::Coordinates> GetAllCoords();
-			
-			std::vector<Bus*> buses_;
+            struct StopPtrComparator {
+                bool operator()(const Stop* lhs, const Stop* rhs) const {
+                    return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(), 
+                                                        rhs->name_.begin(), rhs->name_.end());
+                };
+            };
+
+            std::set<Stop*, StopPtrComparator> stops_;
+            std::vector<Bus*> buses_;
+           
             
 
 		};

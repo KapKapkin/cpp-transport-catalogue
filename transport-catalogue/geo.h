@@ -5,7 +5,7 @@
 namespace transport_catalogue {
     namespace geo {
 
-
+        static constexpr int EARTH_RADIUS = 6371000;
 
         struct Coordinates {
 
