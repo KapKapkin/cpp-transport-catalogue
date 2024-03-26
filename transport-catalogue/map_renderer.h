@@ -93,6 +93,7 @@ namespace transport_catalogue {
 
     }
 
+	// Локально всё отображается нормально, но после пуша в гит появляется лишний отступ. 
 	namespace map_renderer { 
 		// --------------- MapRenderer -------------
 
