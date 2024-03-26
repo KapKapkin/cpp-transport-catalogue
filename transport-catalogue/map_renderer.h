@@ -111,7 +111,7 @@ namespace transport_catalogue {
 			double line_width = 0.0;
 			double stop_radius = 0.0;
 
-			int bus_label_font_size = 0;
+			int bus_label_font_size = 0;    
 			svg::Point bus_label_offset{};
 					
 			double stop_label_font_size = 0.0;
@@ -135,6 +135,7 @@ namespace transport_catalogue {
 
 			svg::Text CreateStopLabel();
             svg::Text CreateStopLabelUnderlayer();
+
         protected:
 			const MapRenderSettings& settings_;
 		};
@@ -142,35 +143,26 @@ namespace transport_catalogue {
 		class MapRenderer : public svg::Document, private MapRendererBase {
 		public:
 			MapRenderer(MapRenderSettings&& settings, std::vector<Bus*> buses);
-
-		private:
-
+        private:
             std::vector<geo::Coordinates> GetAllCoords();
 
-			void InitNotEmptyBusesAndStops(std::vector<Bus*> buses);
+            void InitNotEmptyBusesAndStops(std::vector<Bus*> buses);
 
             void RenderBusLines(detail::SphereProjector& projector);
-            void RenderStops(detail::SphereProjector& projector);
+            void RenderBusLines(detail::SphereProjector& projector);
             void RenderBusLabels(detail::SphereProjector& projector);
             void RenderStopLabels(detail::SphereProjector& projector);
 
             struct StopPtrComparator {
                 bool operator()(const Stop* lhs, const Stop* rhs) const {
-                    return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(), 
-                                                        rhs->name_.begin(), rhs->name_.end());
+                    return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(),
+                        rhs->name_.begin(), rhs->name_.end());
                 };
             };
 
             std::set<Stop*, StopPtrComparator> stops_;
             std::vector<Bus*> buses_;
-           
-            
-
 		};
-		
-		
-
-
 	}//--------------- map_renderer -------------
 
 } //--------------- transport_catalogue -------------
