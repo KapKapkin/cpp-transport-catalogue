@@ -13,6 +13,7 @@
 #include "svg.h"
 
 
+
 /*
  * В этом файле вы можете разместить код, отвечающий за визуализацию карты маршрутов в формате SVG.
  * Визуализация маршртутов вам понадобится во второй части итогового проекта.
@@ -20,8 +21,7 @@
  */
 
 namespace transport_catalogue {
-    namespace detail {
-        // ---------------- SphereProjector  -------------------
+    namespace sphere_projector {
 
         inline const double EPSILON = 1e-6;
 
@@ -29,25 +29,25 @@ namespace transport_catalogue {
 
         class SphereProjector {
         public:
-            // points_begin и points_end задают начало и конец интервала элементов geo::Coordinates
+                // points_begin и points_end задают начало и конец интервала элементов geo::Coordinates
             template <typename PointInputIt>
             SphereProjector(PointInputIt points_begin, PointInputIt points_end,
-                double max_width, double max_height, double padding)
-                : padding_(padding) //
+                            double max_width, double max_height, double padding)
+                            : padding_(padding) //
             {
                 // Если точки поверхности сферы не заданы, вычислять нечего
                 if (points_begin == points_end) {
                     return;
                 }
 
-                // Находим точки с минимальной и максимальной долготой
+                    // Находим точки с минимальной и максимальной долготой
                 const auto [left_it, right_it] = std::minmax_element(
                     points_begin, points_end,
                     [](auto lhs, auto rhs) { return lhs.lng < rhs.lng; });
                 min_lon_ = left_it->lng;
                 const double max_lon = right_it->lng;
 
-                // Находим точки с минимальной и максимальной широтой
+                    // Находим точки с минимальной и максимальной широтой
                 const auto [bottom_it, top_it] = std::minmax_element(
                     points_begin, points_end,
                     [](auto lhs, auto rhs) { return lhs.lat < rhs.lat; });
@@ -84,14 +84,14 @@ namespace transport_catalogue {
             // Проецирует широту и долготу в координаты внутри SVG-изображения
             svg::Point operator()(geo::Coordinates coords) const;
 
-        private:
-            double padding_;
-            double min_lon_ = 0;
-            double max_lat_ = 0;
-            double zoom_coeff_ = 0;
+            private:
+                double padding_;
+                double min_lon_ = 0;
+                double max_lat_ = 0;
+                double zoom_coeff_ = 0;
         };
+    } //--------------- namespace sphere_projector -------------
 
-    }
 
     namespace map_renderer {
 
@@ -132,28 +132,29 @@ namespace transport_catalogue {
 
         class MapRenderer : public svg::Document, private MapRendererBase {
         public:
-            MapRenderer(MapRenderSettings&& settings, std::vector<Bus*> buses);
+            MapRenderer(MapRenderSettings&& settings, std::vector<domain::Bus*> buses);
         private:
             std::vector<geo::Coordinates> GetAllCoords();
 
-            void InitNotEmptyBusesAndStops(std::vector<Bus*> buses);
+            void InitNotEmptyBusesAndStops(std::vector<domain::Bus*> buses);
 
-            void RenderBusLines(detail::SphereProjector& projector);
-            void RenderStops(detail::SphereProjector& projector);
-            void RenderBusLabels(detail::SphereProjector& projector);
-            void RenderStopLabels(detail::SphereProjector& projector);
+            void RenderBusLines(sphere_projector::SphereProjector& projector);
+            void RenderStops(sphere_projector::SphereProjector& projector);
+            void RenderBusLabels(sphere_projector::SphereProjector& projector);
+            void RenderStopLabels(sphere_projector::SphereProjector& projector);
 
             struct StopPtrComparator {
-                bool operator()(const Stop* lhs, const Stop* rhs) const {
+                bool operator()(const domain::Stop* lhs, const domain::Stop* rhs) const {
                     return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(),
                         rhs->name_.begin(), rhs->name_.end());
                 }
             };
 
-            std::set<Stop*, StopPtrComparator> stops_;
-            std::vector<Bus*> buses_;
+            std::set<domain::Stop*, StopPtrComparator> stops_;
+            std::vector<domain::Bus*> buses_;
         };
 
 
-    }//--------------- map_renderer -------------
-} //--------------- transport_catalogue -------------
+    }//--------------- namespace map_renderer -------------
+
+} //--------------- namespace transport_catalogue -------------

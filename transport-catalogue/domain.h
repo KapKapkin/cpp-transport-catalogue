@@ -6,14 +6,14 @@
 #include "geo.h"
 
 namespace transport_catalogue {
-
-	enum class RouteType {
-		DIRECT,
-		ROUND,
-		UNKNOWN
+	namespace domain {
+		enum class RouteType {
+			DIRECT,
+			ROUND,
+			UNKNOWN
 		};
 
-	RouteType IntToRouteType(int i);
+		RouteType IntToRouteType(int i);
 
 		struct Stop {
 
@@ -35,4 +35,5 @@ namespace transport_catalogue {
 			std::vector<Stop*> stops_;
 			RouteType route_type_ = RouteType::ROUND;
 		};
-}
+	} // ------------------ namespace domain ----------------
+} // ------------------ namespace transport_catalogue ---------------- 

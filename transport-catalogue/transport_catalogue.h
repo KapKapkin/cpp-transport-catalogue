@@ -1,15 +1,16 @@
 #pragma once
 
 #include <algorithm>
-#include <string>
 #include <deque>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 #include <set>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <unordered_map>
+#include <vector>
 
-#include "geo.h"
 #include "domain.h"
+#include "geo.h"
 
 namespace transport_catalogue {
 
@@ -21,9 +22,9 @@ namespace transport_catalogue {
 		TransportCatalogue& operator=(const TransportCatalogue&) = delete;
 
 		void AddBus(const std::string& busname);
-		void SetBusRouteType(std::string_view busname, RouteType type);
+		void SetBusRouteType(std::string_view busname, domain::RouteType type);
 
-		const Bus& GetBusByName(std::string_view busname) const;
+		const domain::Bus& GetBusByName(std::string_view busname) const;
 
 		double GetRouteLength(std::string_view busname) const;
 		double GetGeoRouteLength(std::string_view busname) const;
@@ -32,8 +33,8 @@ namespace transport_catalogue {
 		size_t GetUniqueStopsCount(std::string_view busname) const;
 
 		void AddStop(const std::string& stopname, geo::Coordinates coords);
-		const Stop& GetStopByName(std::string_view stopname) const;
-		std::vector<Bus*> GetBuses() ;
+		const domain::Stop& GetStopByName(std::string_view stopname) const;
+		std::vector<domain::Bus*> GetBuses() ;
 
 		void AddStopForBus(std::string_view busname, std::string_view stopname);
 		std::vector<std::string_view> GetBusnamesForStop(std::string_view stopname) const;
@@ -46,25 +47,27 @@ namespace transport_catalogue {
 	private:
 
 		struct StopPairHash {
-			size_t operator() (std::pair<Stop*, Stop*> stop_pair) const {
+			size_t operator() (std::pair<domain::Stop*, domain::Stop*> stop_pair) const {
 				static const int x = 43;
 				return std::hash<std::string>{}(stop_pair.first->name_) + std::hash<std::string>{}(stop_pair.second->name_)* x;
 			}
 		};
 
-		std::deque<Bus> buses_;
-		std::deque<Stop> stops_;
+		std::deque<domain::Bus> buses_;
+		std::deque<domain::Stop> stops_;
 
-		std::unordered_map<std::string_view, Bus*> busname_to_bus_;
-		std::unordered_map<std::string_view, Stop*> stopname_to_stop_;
+		std::unordered_map<std::string_view, domain::Bus*> busname_to_bus_;
+		std::unordered_map<std::string_view, domain::Stop*> stopname_to_stop_;
 
-		std::unordered_map<std::pair<Stop*, Stop*>, int, StopPairHash> stops_to_distance_;
+		std::unordered_map<std::pair<domain::Stop*, domain::Stop*>, int, StopPairHash> stops_to_distance_;
 
 		std::unordered_map<std::string_view, std::set<std::string_view>> stop_to_busnames_;
 	};
 
 	namespace detail {
-		std::string_view Trim(std::string_view string);
-		std::vector<std::string_view> Split(std::string_view string, char delim);
+		namespace strings {
+			std::string_view Trim(std::string_view string);
+			std::vector<std::string_view> Split(std::string_view string, char delim);
+		}
 	}
-}
+} // ------------ namespace transport_catalogue ----------------- 

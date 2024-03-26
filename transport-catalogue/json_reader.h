@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -27,8 +29,6 @@ namespace transport_catalogue {
 
 			const std::unordered_map<std::string_view, const json::Dict*>& GetRoadDistances() const;
 
-
-
 		private:
 
 			void FillBusRequests();
@@ -42,10 +42,8 @@ namespace transport_catalogue {
 			std::vector<const json::Node*> stop_requests_;
 			std::unordered_map<std::string_view, const json::Node*> render_settings_;
 			std::unordered_map<std::string_view, const json::Dict*> road_distances_;
-
 		};
+	} // ------------------ namespace json_reader ----------------
 
+} // ------------------ namespace transport_catalogue ----------------
 
-
-	}
-}

@@ -1,12 +1,16 @@
 #include "json.h"
 
+#include <iostream>
+#include <map>
 #include <string>
+#include <variant>
+#include <vector>
 
 using namespace std;
 
 namespace json {
 
-    namespace {
+    namespace loaders {
 
         // ---------------- Loaders --------------------
 
@@ -282,7 +286,7 @@ namespace json {
             }
         }
 
-    }  // namespace
+    }  // namespace loaders
 
     // ---------------- Node --------------------
 
@@ -501,7 +505,7 @@ namespace json {
     }
 
     Document Load(istream& input) {
-        return Document{ LoadNode(input) };
+        return Document{ loaders::LoadNode(input) };
     }
 
     void Print(const Document& doc, std::ostream& output) {

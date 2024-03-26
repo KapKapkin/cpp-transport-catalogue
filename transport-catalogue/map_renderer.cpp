@@ -1,9 +1,16 @@
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <optional>
 #include <vector>
 #include <utility>
+#include <string>
+#include <set>
+
+#include "svg.h"
 
 #include "map_renderer.h"
-#include "svg.h"
+
 
 
 
@@ -14,7 +21,7 @@
  */
 
 namespace transport_catalogue {
-	namespace detail {
+	namespace sphere_projector {
 
 		bool IsZero(double value) {
 			return std::abs(value) < EPSILON;
@@ -26,7 +33,8 @@ namespace transport_catalogue {
 				(max_lat_ - coords.lat) * zoom_coeff_ + padding_
 			};
 		}
-	}
+
+	} //--------------- namespace sphere_projector -------------
 	namespace map_renderer {
 
 		svg::Circle MapRendererBase::CreateStopCircle() {
@@ -100,20 +108,20 @@ namespace transport_catalogue {
 
 		MapRenderer::MapRenderer(
 			MapRenderSettings&& settings,
-			std::vector<Bus*> buses
+			std::vector<domain::Bus*> buses
 			) :MapRendererBase(std::move(settings)) {
 			InitNotEmptyBusesAndStops(buses);
 
 			std::vector<geo::Coordinates> coords = GetAllCoords();
-			detail::SphereProjector projector(coords.begin(), coords.end(), settings_.width, settings_.height, settings_.padding);
+			sphere_projector::SphereProjector projector(coords.begin(), coords.end(), settings_.width, settings_.height, settings_.padding);
 			RenderBusLines(projector);
 			RenderBusLabels(projector);
 			RenderStops(projector);
 			RenderStopLabels(projector);
 		}
 
-		void MapRenderer::InitNotEmptyBusesAndStops(std::vector<Bus*> buses) {
-			std::sort(buses.begin(), buses.end(), [](const Bus* lhs, const Bus* rhs) {return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(), rhs->name_.begin(), rhs->name_.end()); });
+		void MapRenderer::InitNotEmptyBusesAndStops(std::vector<domain::Bus*> buses) {
+			std::sort(buses.begin(), buses.end(), [](const domain::Bus* lhs, const domain::Bus* rhs) {return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(), rhs->name_.begin(), rhs->name_.end()); });
 			for (auto* bus : buses) {
 				if (!bus->stops_.empty()) {
 					buses_.push_back(bus);
@@ -133,13 +141,13 @@ namespace transport_catalogue {
 		}
 
 
-		void MapRenderer::RenderBusLines(detail::SphereProjector& projector) {
+		void MapRenderer::RenderBusLines(sphere_projector::SphereProjector& projector) {
 			for (size_t i = 0u; i < buses_.size(); i++) {
 				svg::Polyline line = CreateBusLine(i);
 				for (auto* stop : buses_[i]->stops_) {
 					line.AddPoint(projector(stop->coords_));
 				}
-				if (buses_[i]->route_type_ == RouteType::DIRECT) {
+				if (buses_[i]->route_type_ == domain::RouteType::DIRECT) {
 					for (int j = buses_[i]->stops_.size() - 2; j >= 0; j--) {
 						line.AddPoint(projector(buses_[i]->stops_[j]->coords_));
 					}
@@ -148,7 +156,7 @@ namespace transport_catalogue {
 			}
 		}
 
-		void MapRenderer::RenderStops(detail::SphereProjector& projector) {
+		void MapRenderer::RenderStops(sphere_projector::SphereProjector& projector) {
 			for (auto* stop : stops_) {
 				svg::Circle circle = CreateStopCircle();
 				circle.SetCenter(projector(stop->coords_));
@@ -156,25 +164,26 @@ namespace transport_catalogue {
 			}
 		}
 
-		void MapRenderer::RenderBusLabels(detail::SphereProjector& projector) {
+		void MapRenderer::RenderBusLabels(sphere_projector::SphereProjector& projector) {
 			for (size_t i = 0; i < buses_.size(); i++) {
 				auto& stops = buses_[i]->stops_;
 				Add(CreateBusLabelUnderlayer().SetPosition(projector(stops[0]->coords_)).SetData(buses_[i]->name_));
 				Add(CreateBusLabel(i).SetPosition(projector(stops[0]->coords_)).SetData(buses_[i]->name_));
-				if (buses_[i]->route_type_ != RouteType::ROUND && stops.front() != stops.back()) {
+				if (buses_[i]->route_type_ != domain::RouteType::ROUND && stops.front() != stops.back()) {
 					Add(CreateBusLabelUnderlayer().SetPosition(projector(stops.back()->coords_)).SetData(buses_[i]->name_));
 					Add(CreateBusLabel(i).SetPosition(projector(stops.back()->coords_)).SetData(buses_[i]->name_));
 				}
 			}
 		}
 
-		void MapRenderer::RenderStopLabels(detail::SphereProjector& projector) {
+		void MapRenderer::RenderStopLabels(sphere_projector::SphereProjector& projector) {
 			for (auto* stop : stops_) {
 				svg::Text text = CreateStopLabel();
 				Add(CreateStopLabelUnderlayer().SetPosition(projector(stop->coords_)).SetData(stop->name_));
 				Add(CreateStopLabel().SetPosition(projector(stop->coords_)).SetData(stop->name_));
 			}
 		}
-	}
-}
+	} //--------------- namespace map_renderer -------------
+	
+} // ------------ namespace transport_catalogue ----------------- 
 

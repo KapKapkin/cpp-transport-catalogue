@@ -1,18 +1,13 @@
 #include <iostream>
+#include <sstream>
+#include <unordered_map>
 
-#include "request_handler.h"
+#include "domain.h"
 #include "map_renderer.h"
 #include "json.h"
-#include "sstream"
 
+#include "request_handler.h"
 
-/*
- * Здесь можно было бы разместить код обработчика запросов к базе, содержащего логику, которую не
- * хотелось бы помещать ни в transport_catalogue, ни в json reader.
- *
- * Если вы затрудняетесь выбрать, что можно было бы поместить в этот файл,
- * можете оставить его пустым.
- */
 using namespace transport_catalogue;
 using namespace map_renderer;
 using namespace std::literals;
@@ -20,67 +15,72 @@ using namespace std::literals;
 namespace transport_catalogue {
 
 	namespace detail {
-		MapRenderSettings GetRenderSettings(std::unordered_map<std::string_view, const json::Node*> data) {
+		namespace render_settings {
+			MapRenderSettings GetRenderSettings(std::unordered_map<std::string_view, const json::Node*> data) {
 
-			MapRenderSettings settings;
+				MapRenderSettings settings;
 
-			settings.width = data.at("width")->AsDouble();
-			settings.height = data.at("height")->AsDouble();
-			settings.padding = data.at("padding")->AsDouble();
-			settings.line_width = data.at("line_width")->AsDouble();
-			settings.stop_radius = data.at("stop_radius")->AsDouble();
-			settings.bus_label_font_size = data.at("bus_label_font_size")->AsInt();
-			settings.bus_label_offset = std::move(ParseOffset(data.at("bus_label_offset")->AsArray()));
-			settings.stop_label_font_size = data.at("stop_label_font_size")->AsInt();
-			settings.stop_label_offset = std::move(ParseOffset(data.at("stop_label_offset")->AsArray()));
-			settings.underlayer_color = std::move(ParseColor(data.at("underlayer_color")));
-			settings.underlayer_width = data.at("underlayer_width")->AsDouble();
-			settings.color_palette = std::move(ParsePaletteColors(data.at("color_palette")->AsArray()));
-			return settings;
-		}
-
-		svg::Color ParseColor(const json::Node* data) {
-			if (data->IsString()) {
-				return data->AsString();
+				settings.width = data.at("width")->AsDouble();
+				settings.height = data.at("height")->AsDouble();
+				settings.padding = data.at("padding")->AsDouble();
+				settings.line_width = data.at("line_width")->AsDouble();
+				settings.stop_radius = data.at("stop_radius")->AsDouble();
+				settings.bus_label_font_size = data.at("bus_label_font_size")->AsInt();
+				settings.bus_label_offset = std::move(ParseOffset(data.at("bus_label_offset")->AsArray()));
+				settings.stop_label_font_size = data.at("stop_label_font_size")->AsInt();
+				settings.stop_label_offset = std::move(ParseOffset(data.at("stop_label_offset")->AsArray()));
+				settings.underlayer_color = std::move(ParseColor(data.at("underlayer_color")));
+				settings.underlayer_width = data.at("underlayer_width")->AsDouble();
+				settings.color_palette = std::move(ParsePaletteColors(data.at("color_palette")->AsArray()));
+				return settings;
 			}
-			else if (data->IsArray()) {
-				if (data->AsArray().size() == 3) {
-					svg::Rgb rgb_color = { (uint8_t)data->AsArray()[0].AsDouble(), (uint8_t)data->AsArray()[1].AsDouble(), (uint8_t)data->AsArray()[2].AsDouble() };
-					return rgb_color;
+
+			svg::Color ParseColor(const json::Node* data) {
+				if (data->IsString()) {
+					return data->AsString();
 				}
-				else if (data->AsArray().size() == 4) {
-					svg::Rgba rgba_color = { (uint8_t)data->AsArray()[0].AsDouble(), (uint8_t)data->AsArray()[1].AsDouble(), (uint8_t)data->AsArray()[2].AsDouble(), data->AsArray()[3].AsDouble() };
-					return rgba_color;
+				else if (data->IsArray()) {
+					if (data->AsArray().size() == 3) {
+						svg::Rgb rgb_color = { (uint8_t)data->AsArray()[0].AsDouble(), (uint8_t)data->AsArray()[1].AsDouble(), (uint8_t)data->AsArray()[2].AsDouble() };
+						return rgb_color;
+					}
+					else if (data->AsArray().size() == 4) {
+						svg::Rgba rgba_color = { (uint8_t)data->AsArray()[0].AsDouble(), (uint8_t)data->AsArray()[1].AsDouble(), (uint8_t)data->AsArray()[2].AsDouble(), data->AsArray()[3].AsDouble() };
+						return rgba_color;
+					}
+					else {
+						throw json::ParsingError("");
+					}
 				}
 				else {
 					throw json::ParsingError("");
 				}
 			}
-			else {
-				throw json::ParsingError("");
-			}
-		}
 
-		std::vector<svg::Color> ParsePaletteColors(const json::Array& data) {
-			std::vector<svg::Color> colors;
-			for (const json::Node& color : data) {
-				colors.push_back(std::move(ParseColor(&color)));
+			std::vector<svg::Color> ParsePaletteColors(const json::Array& data) {
+				std::vector<svg::Color> colors;
+				for (const json::Node& color : data) {
+					colors.push_back(std::move(ParseColor(&color)));
+				}
+				return colors;
 			}
-			return colors;
-		}
 
-		svg::Point ParseOffset(const json::Array& data) {
-			if (data.size() == 2) {
-				return { data[0].AsDouble(), data[1].AsDouble() };
+			svg::Point ParseOffset(const json::Array& data) {
+				if (data.size() == 2) {
+					return { data[0].AsDouble(), data[1].AsDouble() };
+				}
+				else {
+					throw json::ParsingError("");
+				}
 			}
-			else {
-				throw json::ParsingError("");
-			}
-		}
+		}// --------------- render_settings ----------------
 
-	} // --------------- detail ----------------
+	} // ------------------ detail -------------------------
 
 	namespace requests {
+
+		using namespace detail::render_settings;
+		using namespace domain;
 
 		// ---------- JSONHandler -----------------
 
@@ -175,7 +175,7 @@ namespace transport_catalogue {
 		}
 			
 		void RequestHandler::Render() {
-			MapRenderSettings settings = detail::GetRenderSettings(reader_.GetRenderSettings());
+			MapRenderSettings settings = GetRenderSettings(reader_.GetRenderSettings());
 			MapRenderer renderer(std::move(settings), db_.GetBuses());
 
 			std::ostringstream oss;
@@ -185,6 +185,7 @@ namespace transport_catalogue {
 		}
 
 	} // namespace requests
+
 } // namespace transport_catalogue
 
 

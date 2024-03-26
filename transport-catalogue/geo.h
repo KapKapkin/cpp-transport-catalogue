@@ -18,9 +18,9 @@ namespace transport_catalogue {
             bool operator!=(const Coordinates& other) const {
                 return !(*this == other);
             }
+
         };
+        double ComputeDistance(const Coordinates& from, const Coordinates& to);
 
-        double ComputeDistance(Coordinates from, Coordinates to);
-    }
-
-}
+    }  // ----------------- namespace geo -----------------
+}// ----------------- namespace transport -----------------

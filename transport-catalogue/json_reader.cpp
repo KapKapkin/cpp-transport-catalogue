@@ -1,4 +1,13 @@
+#include <iostream>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
+
+#include "json.h"
+#include "transport_catalogue.h"
+
 #include "json_reader.h"
+
 
 using namespace std::literals;
 
@@ -85,5 +94,6 @@ namespace transport_catalogue {
 				render_settings_.insert({ setting, &data });
 			}
 		}
-	}
-}
+	} // ------------------ namespace json_reader ----------------
+
+} // ------------------ namespace transport_catalogue ----------------

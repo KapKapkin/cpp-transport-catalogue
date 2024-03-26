@@ -1,10 +1,21 @@
-#include <unordered_set>
+
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include "transport_catalogue.h"
+#include "domain.h"
 #include "string_view"
 #include "geo.h"
+
+#include "transport_catalogue.h"
+
+
+using namespace transport_catalogue::domain;
+
 
 namespace transport_catalogue {
 	void TransportCatalogue::AddBus(const std::string& busname) {
@@ -133,33 +144,35 @@ namespace transport_catalogue {
 	}
 
 	namespace detail {
-
-		std::string_view Trim(std::string_view string) {
-			const auto start = string.find_first_not_of(' ');
-			if (start == string.npos) {
-				return {};
-			}
-			return string.substr(start, string.find_last_not_of(' ') + 1 - start);
-		}
-
-
-		std::vector<std::string_view> Split(std::string_view string, char delim) {
-			std::vector<std::string_view> result;
-
-			size_t pos = 0;
-			while ((pos = string.find_first_not_of(' ', pos)) < string.length()) {
-				auto delim_pos = string.find(delim, pos);
-				if (delim_pos == string.npos) {
-					delim_pos = string.size();
+		namespace strings {
+			std::string_view Trim(std::string_view string) {
+				const auto start = string.find_first_not_of(' ');
+				if (start == string.npos) {
+					return {};
 				}
-				if (auto substr = Trim(string.substr(pos, delim_pos - pos)); !substr.empty()) {
-					result.push_back(substr);
-				}
-				pos = delim_pos + 1;
+				return string.substr(start, string.find_last_not_of(' ') + 1 - start);
 			}
 
-			return result;
+
+			std::vector<std::string_view> Split(std::string_view string, char delim) {
+				std::vector<std::string_view> result;
+
+				size_t pos = 0;
+				while ((pos = string.find_first_not_of(' ', pos)) < string.length()) {
+					auto delim_pos = string.find(delim, pos);
+					if (delim_pos == string.npos) {
+						delim_pos = string.size();
+					}
+					if (auto substr = Trim(string.substr(pos, delim_pos - pos)); !substr.empty()) {
+						result.push_back(substr);
+					}
+					pos = delim_pos + 1;
+				}
+
+				return result;
+			}
 		}
+		
 	}
 
-}
+} //--------------- namespace transport_catalogue -------------
