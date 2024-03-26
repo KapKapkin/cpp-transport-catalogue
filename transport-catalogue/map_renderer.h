@@ -94,10 +94,6 @@ namespace transport_catalogue {
     }
 
 	namespace map_renderer { 
-
-        
-        
-
 		// --------------- MapRenderer -------------
 
 		struct MapRenderSettings {
@@ -123,46 +119,43 @@ namespace transport_catalogue {
 			std::vector<svg::Color> color_palette;
 		};
 
-		class MapRendererBase {
-		public:
-			MapRendererBase(MapRenderSettings&& settings) : settings_(std::move(settings)) {}
 
-			svg::Circle CreateStopCircle();
-			svg::Polyline CreateBusLine(int color_id);
-
-			svg::Text CreateBusLabel(int color_id);
+        class MapRendererBase {
+        public:
+            MapRendererBase(MapRenderSettings&& settings) : settings_(std::move(settings)) {}
+            svg::Circle CreateStopCircle();
+            svg::Polyline CreateBusLine(int color_id);
+            svg::Text CreateBusLabel(int color_id);
             svg::Text CreateBusLabelUnderlayer();
-
-			svg::Text CreateStopLabel();
+            svg::Text CreateStopLabel();
             svg::Text CreateStopLabelUnderlayer();
-
         protected:
-			const MapRenderSettings& settings_;
-		};
+            const MapRenderSettings& settings_;
+        };
 
-		class MapRenderer : public svg::Document, private MapRendererBase {
-		public:
-			MapRenderer(MapRenderSettings&& settings, std::vector<Bus*> buses);
+        class MapRenderer : public svg::Document, private MapRendererBase {
+        public:
+            MapRenderer(MapRenderSettings&& settings, std::vector<Bus*> buses);
         private:
             std::vector<geo::Coordinates> GetAllCoords();
 
             void InitNotEmptyBusesAndStops(std::vector<Bus*> buses);
 
             void RenderBusLines(detail::SphereProjector& projector);
-            void RenderBusLines(detail::SphereProjector& projector);
+            void RenderStops(detail::SphereProjector& projector);
             void RenderBusLabels(detail::SphereProjector& projector);
             void RenderStopLabels(detail::SphereProjector& projector);
 
             struct StopPtrComparator {
-                bool operator()(const Stop* lhs, const Stop* rhs) const {
+                bool operator()(const Stop* lhs, const Stop* rhs) const { 
                     return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(),
-                        rhs->name_.begin(), rhs->name_.end());
-                };
+                                                        rhs->name_.begin(), rhs->name_.end());
+                }
             };
 
             std::set<Stop*, StopPtrComparator> stops_;
             std::vector<Bus*> buses_;
-		};
+        };
 	}//--------------- map_renderer -------------
 
 } //--------------- transport_catalogue -------------
