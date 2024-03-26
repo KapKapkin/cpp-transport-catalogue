@@ -93,33 +93,29 @@ namespace transport_catalogue {
 
     }
 
-	// Локально всё отображается нормально, но после пуша в гит появляется лишний отступ. 
-	namespace map_renderer { 
-		// --------------- MapRenderer -------------
+    namespace map_renderer {
 
-		struct MapRenderSettings {
+        struct MapRenderSettings {
+            MapRenderSettings() = default;
 
-			MapRenderSettings() = default;
+            double width = 0.0;
+            double height = 0.0;
+            double padding = 0.0;
 
-			double width = 0.0;
-			double height = 0.0;
-			double padding = 0.0;
+            double line_width = 0.0;
+            double stop_radius = 0.0;
 
-			double line_width = 0.0;
-			double stop_radius = 0.0;
+            int bus_label_font_size = 0;
+            int stop_label_font_size = 0;
 
-			int bus_label_font_size = 0;    
-			svg::Point bus_label_offset{};
-					
-			double stop_label_font_size = 0.0;
-			svg::Point stop_label_offset{};
+            svg::Point bus_label_offset{};
+            svg::Point stop_label_offset{};
 
-			svg::Color underlayer_color{};
-			double underlayer_width = 0.0;
+            svg::Color underlayer_color{};
+            std::vector<svg::Color> color_palette;
 
-			std::vector<svg::Color> color_palette;
-		};
-
+            double underlayer_width = 0.0;
+        };
 
         class MapRendererBase {
         public:
@@ -148,15 +144,16 @@ namespace transport_catalogue {
             void RenderStopLabels(detail::SphereProjector& projector);
 
             struct StopPtrComparator {
-                bool operator()(const Stop* lhs, const Stop* rhs) const { 
+                bool operator()(const Stop* lhs, const Stop* rhs) const {
                     return std::lexicographical_compare(lhs->name_.begin(), lhs->name_.end(),
-                                                        rhs->name_.begin(), rhs->name_.end());
+                        rhs->name_.begin(), rhs->name_.end());
                 }
             };
 
             std::set<Stop*, StopPtrComparator> stops_;
             std::vector<Bus*> buses_;
         };
-	}//--------------- map_renderer -------------
 
+
+    }//--------------- map_renderer -------------
 } //--------------- transport_catalogue -------------
