@@ -154,7 +154,7 @@ namespace transport_catalogue {
 				else if (request_type == "Bus") {
 					const std::string& name = request_data.at("name").AsString();
 					try {
-						
+		
 						double curvature = db_.GetRouteCurvature(name);
 						double route_length = db_.GetRouteLength(name);
 						int stop_count = db_.GetStopCount(name);
