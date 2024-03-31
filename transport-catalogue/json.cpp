@@ -314,7 +314,7 @@ namespace json {
     bool Node::IsArray() const {
         return std::holds_alternative<Array>(*this);
     }
-    bool Node::IsMap() const {
+    bool Node::IsDict() const {
         return std::holds_alternative<Dict>(*this);;
     }
 
@@ -357,8 +357,8 @@ namespace json {
         return get<Array>(*this);
     }
 
-    const Dict& Node::AsMap() const {
-        if (!IsMap()) {
+    const Dict& Node::AsDict() const {
+        if (!IsDict()) {
             throw logic_error("");
         }
         return get<Dict>(*this);

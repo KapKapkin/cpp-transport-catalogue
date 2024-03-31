@@ -49,10 +49,10 @@ namespace transport_catalogue {
 		void JSONReader::FillBusRequests() {
 
 			const auto& root = commands_.GetRoot();
-			const json::Array& base_requests = root.AsMap().at("base_requests").AsArray();
+			const json::Array& base_requests = root.AsDict().at("base_requests").AsArray();
 
 			for (const auto& request : base_requests) {
-				const json::Dict& request_data = request.AsMap();
+				const json::Dict& request_data = request.AsDict();
 
 				if (request_data.at("type").AsString() == "Bus") {
 
@@ -65,21 +65,21 @@ namespace transport_catalogue {
 		void JSONReader::FillStopRequests() {
 
 			auto& root = commands_.GetRoot();
-			const json::Array& base_requests = root.AsMap().at("base_requests").AsArray();
+			const json::Array& base_requests = root.AsDict().at("base_requests").AsArray();
 
 			for (const json::Node& request : base_requests) {
-				const json::Dict& request_data = request.AsMap();
+				const json::Dict& request_data = request.AsDict();
 
 				if (request_data.at("type").AsString() == "Stop") {
 					stop_requests_.push_back(&request);
-					road_distances_.insert({ request_data.at("name").AsString(), &(request_data.at("road_distances").AsMap()) });
+					road_distances_.insert({ request_data.at("name").AsString(), &(request_data.at("road_distances").AsDict()) });
 				}
 			}
 		}
 
 		void JSONReader::FillStatRequests() {
 			auto& root = commands_.GetRoot();
-			const json::Array& stat_requests = root.AsMap().at("stat_requests").AsArray();
+			const json::Array& stat_requests = root.AsDict().at("stat_requests").AsArray();
 
 			for (const json::Node& request : stat_requests) {
 				stat_requests_.push_back(&request);
@@ -88,7 +88,7 @@ namespace transport_catalogue {
 
 		void JSONReader::FillRenderSettings() {
 			auto& root = commands_.GetRoot();
-			const json::Dict& render_settings = root.AsMap().at("render_settings").AsMap();
+			const json::Dict& render_settings = root.AsDict().at("render_settings").AsDict();
 
 			for (auto& [setting, data] : render_settings) {
 				render_settings_.insert({ setting, &data });

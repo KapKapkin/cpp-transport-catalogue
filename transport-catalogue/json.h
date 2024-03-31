@@ -30,16 +30,16 @@ namespace json {
         bool IsPureDouble() const;
         bool IsBool() const;
         bool IsString() const;
-        bool IsNull() const;
+        bool IsNull() const;    
         bool IsArray() const;
-        bool IsMap() const;
+        bool IsDict() const;
 
         int AsInt() const;
         bool AsBool() const;
         double AsDouble() const;
         const std::string& AsString() const;
         const Array& AsArray() const;
-        const Dict& AsMap() const;
+        const Dict& AsDict() const;
 
         const Value& GetValue() const;
     };
