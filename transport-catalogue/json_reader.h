@@ -25,21 +25,26 @@ namespace transport_catalogue {
 
 			const std::vector<const json::Node*>& GetStopRequests() const;
 
+			const std::unordered_map<std::string_view, const double>& GetRoutingSettings() const;
+
 			const std::unordered_map<std::string_view, const json::Node*>& GetRenderSettings() const;
 
 			const std::unordered_map<std::string_view, const json::Dict*>& GetRoadDistances() const;
 
 		private:
 
+			
 			void FillBusRequests();
 			void FillStopRequests();
 			void FillStatRequests();
 			void FillRenderSettings();
+			void FillRoutingSettings();
 
 			json::Document commands_;
 			std::vector<const json::Node*> stat_requests_;
 			std::vector<const json::Node*> bus_requests_;
 			std::vector<const json::Node*> stop_requests_;
+			std::unordered_map<std::string_view, const double> routing_settings_;
 			std::unordered_map<std::string_view, const json::Node*> render_settings_;
 			std::unordered_map<std::string_view, const json::Dict*> road_distances_;
 		};

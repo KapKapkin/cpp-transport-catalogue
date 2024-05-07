@@ -8,5 +8,6 @@ int main() {
     transport_catalogue::TransportCatalogue catalogue;
     transport_catalogue::requests::RequestHandler handler(catalogue, cin);
     handler.Render();
+    handler.Router();
     handler.ExecuteStatRequest(cout);
 }

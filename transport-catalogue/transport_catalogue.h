@@ -14,6 +14,11 @@
 
 namespace transport_catalogue {
 
+	struct RoutingSettings {
+		double bus_wait_time;
+		double bus_velocity;
+	};
+
 	class TransportCatalogue {
 	public:
 		TransportCatalogue() = default;
@@ -24,7 +29,7 @@ namespace transport_catalogue {
 		void AddBus(const std::string& busname);
 		void SetBusRouteType(std::string_view busname, domain::RouteType type);
 
-		const domain::Bus& GetBusByName(std::string_view busname) const;
+		const domain::Bus* GetBusByName(std::string_view busname) const;
 
 		double GetRouteLength(std::string_view busname) const;
 		double GetGeoRouteLength(std::string_view busname) const;
@@ -32,14 +37,18 @@ namespace transport_catalogue {
 		size_t GetStopCount(std::string_view busname) const;
 		size_t GetUniqueStopsCount(std::string_view busname) const;
 
+
 		void AddStop(const std::string& stopname, geo::Coordinates coords);
-		const domain::Stop& GetStopByName(std::string_view stopname) const;
-		std::vector<domain::Bus*> GetBuses() ;
+		const domain::Stop* GetStopByName(std::string_view stopname) const;
+
+		const std::unordered_map<std::string_view, domain::Bus*>& GetBuses() const;
+		const std::unordered_map<std::string_view, domain::Stop*>& GetStops() const;
 
 		void AddStopForBus(std::string_view busname, std::string_view stopname);
 		std::vector<std::string_view> GetBusnamesForStop(std::string_view stopname) const;
 
-		
+		void SetRoutingSettings(RoutingSettings&& settings);
+		RoutingSettings GetRoutingSettings() const;
 
 		void SetDistance(std::string_view stopname1, std::string_view stopname2, double distance);
 		int GetDistance(std::string_view stopname1, std::string_view stopname2) const;
@@ -53,6 +62,8 @@ namespace transport_catalogue {
 			}
 		};
 
+		RoutingSettings routing_settings_;
+
 		std::deque<domain::Bus> buses_;
 		std::deque<domain::Stop> stops_;
 
@@ -60,7 +71,6 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, domain::Stop*> stopname_to_stop_;
 
 		std::unordered_map<std::pair<domain::Stop*, domain::Stop*>, int, StopPairHash> stops_to_distance_;
-
 		std::unordered_map<std::string_view, std::set<std::string_view>> stop_to_busnames_;
 	};
 

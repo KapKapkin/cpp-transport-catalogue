@@ -1,13 +1,18 @@
+#include "request_handler.h"
+
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
 
-#include "domain.h"
-#include "map_renderer.h"
-#include "json.h"
-#include "json_builder.h"
 
-#include "request_handler.h"
+#include "domain.h"
+#include "json_reader.h"
+#include "map_renderer.h"
+#include "router.h"
+#include "transport_catalogue.h"
+#include "transport_router.h"
+
 
 using namespace transport_catalogue;
 using namespace map_renderer;
@@ -92,6 +97,12 @@ namespace transport_catalogue {
 		void RequestHandler::ApplyRequest() {
 			ApplyStopRequests();
 			ApplyBusRequests();
+			ApplyRoutingSettings();
+		}
+
+		void RequestHandler::Router() {
+			graph_ = std::make_unique<transport_graph::TransportGraph>(transport_graph::TransportGraph(db_));
+			router_ = std::make_unique<transport_graph::TransportRouter>(transport_graph::TransportRouter(*graph_));
 		}
 
 		void RequestHandler::ApplyStopRequests() {
@@ -124,6 +135,11 @@ namespace transport_catalogue {
 			}
 		}
 
+		void RequestHandler::ApplyRoutingSettings() {
+			const auto& settings = reader_.GetRoutingSettings();
+			db_.SetRoutingSettings({ settings.at("bus_wait_time"), settings.at("bus_velocity") });
+		}
+
 		void RequestHandler::ExecuteStatRequest(std::ostream& out) {
 			const std::vector<const json::Node*>& stat_requests = reader_.GetStatRequests();
 
@@ -131,65 +147,129 @@ namespace transport_catalogue {
 			builder.StartArray();
 
 			for (const json::Node* requests : stat_requests) {
+
 				const json::Dict& request_data = requests->AsDict();
-
-				builder.StartDict().Key("request_id").Value(request_data.at("id").AsInt());
-
 				const std::string& request_type = request_data.at("type").AsString();
 
 				if (request_type == "Stop") {
-					const std::string& name = request_data.at("name").AsString();
-
-					try {
-						json::Array buses;
-						for (std::string_view busname : db_.GetBusnamesForStop(name)) {
-							buses.push_back((std::string)busname);
-						}
-						builder.Key("buses").Value(json::Node(buses));
-					}
-					catch (const std::out_of_range&) {
-						builder.Key("error_message").Value("not found");
-					}
+					ApplySingleStopRequest(builder, request_data);
 				}
 				else if (request_type == "Bus") {
-					const std::string& name = request_data.at("name").AsString();
-					try {
-		
-						double curvature = db_.GetRouteCurvature(name);
-						double route_length = db_.GetRouteLength(name);
-						int stop_count = db_.GetStopCount(name);
-						int unique_stop_count = db_.GetUniqueStopsCount(name);
-
-						builder.Key("curvature").Value(curvature);
-						builder.Key("route_length").Value(route_length);
-						builder.Key("stop_count").Value(stop_count);
-						builder.Key("unique_stop_count").Value(unique_stop_count);
-					}
-					catch (const std::out_of_range&) {
-						builder.Key("error_message").Value("not found");
-					}
+					ApplySingleBusRequest(builder, request_data);
 				}
 				else if (request_type == "Map") {
-					if (!GetMap().size()) {
-						throw std::logic_error("");
-					}
-					builder.Key("map").Value(std::move(GetMap()));
+					ApplySingleMapRequest(builder, request_data);
 				}
-
-				builder.EndDict();
+				else if (request_type == "Route") {
+					ApplySingleRouteRequest(builder, request_data);
+				}
 			}
+
 			builder.EndArray();
 			json::Print(json::Document(builder.Build()), out);
+		}
+
+		void RequestHandler::ApplySingleStopRequest(json::Builder& builder, const json::Dict& request_data) {
+			builder.StartDict().Key("request_id").Value(request_data.at("id").AsInt());
+			const std::string name = request_data.at("name").AsString();
+
+			try {
+				json::Array buses;
+				for (std::string_view busname : db_.GetBusnamesForStop(name)) {
+					buses.push_back((std::string)busname);
+				}
+				builder.Key("buses").Value(json::Node(buses));
+			}
+			catch (const std::out_of_range&) {
+				builder.Key("error_message").Value("not found");
+			}
+
+			builder.EndDict();
+		}
+
+		void RequestHandler::ApplySingleBusRequest(json::Builder& builder, const json::Dict& request_data) {
+			builder.StartDict().Key("request_id").Value(request_data.at("id").AsInt());
+			const std::string name = request_data.at("name").AsString();
+
+			try {
+				double curvature = db_.GetRouteCurvature(name);
+				double route_length = db_.GetRouteLength(name);
+				int stop_count = db_.GetStopCount(name);
+				int unique_stop_count = db_.GetUniqueStopsCount(name);
+
+				builder.Key("curvature").Value(curvature);
+				builder.Key("route_length").Value(route_length);
+				builder.Key("stop_count").Value(stop_count);
+				builder.Key("unique_stop_count").Value(unique_stop_count);
+			}
+			catch (const std::out_of_range&) {
+				builder.Key("error_message").Value("not found");
+			}
+
+			builder.EndDict();
+		}
+
+		void RequestHandler::ApplySingleMapRequest(json::Builder& builder, const json::Dict& request_data) {
+			builder.StartDict().Key("request_id").Value(request_data.at("id").AsInt());
+
+			if (!GetMap().has_value()) {
+				throw std::logic_error("");
+			}
+
+			builder.Key("map").Value(std::move(*GetMap()));
+			builder.EndDict();
+		}
+
+		void RequestHandler::ApplySingleRouteRequest(json::Builder& builder, const json::Dict& request_data) {
+			if (router_ == nullptr) {
+				throw std::logic_error("");
+			}
+			builder.StartDict().Key("request_id").Value(request_data.at("id").AsInt());
+
+			const Stop* from = db_.GetStopByName( request_data.at("from").AsString());
+			const Stop* to = db_.GetStopByName(request_data.at("to").AsString());
+			auto route_data = router_->GetRoute(from, to);
+			if (route_data.has_value()) {
+				builder.Key("items").StartArray();
+				for (const auto& data : route_data.value().route) {
+					builder.StartDict();
+					if (data.bus == nullptr) {
+						builder.Key("stop_name").Value(data.stop_from->name_);
+						builder.Key("time").Value(data.time);
+						builder.Key("type").Value("Wait");
+					}
+					else {
+						builder.Key("bus").Value(data.bus->name_);
+						builder.Key("span_count").Value(data.stop_count);
+						builder.Key("time").Value(data.time);
+						builder.Key("type").Value("Bus");
+					}
+					builder.EndDict();
+				}
+				builder.EndArray();
+				builder.Key("total_time").Value(route_data.value().time);
+			}
+			else {
+				builder.Key("error_message").Value("not found");
+			}
+			builder.EndDict();
 		}
 			
 		void RequestHandler::Render() {
 			MapRenderSettings settings = GetRenderSettings(reader_.GetRenderSettings());
-			MapRenderer renderer(std::move(settings), db_.GetBuses());
-
+			std::vector<Bus*> buses;
+			for (auto it : db_.GetBuses()) {
+				buses.push_back(it.second);
+			}
+			MapRenderer renderer(std::move(settings), buses);
 			std::ostringstream oss;
 			renderer.Render(oss);
 
 			rendered_map_ = oss.str();
+		}
+
+		std::optional<std::string> RequestHandler::GetMap() const {
+			return rendered_map_;
 		}
 
 	} // namespace requests

@@ -27,11 +27,11 @@ namespace transport_catalogue {
 		busname_to_bus_[busname]->route_type_ = type;
 	}
 
-	const Bus& TransportCatalogue::GetBusByName(std::string_view busname) const {
+	const Bus* TransportCatalogue::GetBusByName(std::string_view busname) const {
 		if (busname_to_bus_.count(busname) == 0) {
 			throw std::invalid_argument("");
 		}
-		return *busname_to_bus_.at(busname);
+		return busname_to_bus_.at(busname);
 	}
 
 	void TransportCatalogue::AddStop(const std::string& stopname, geo::Coordinates coords) {
@@ -40,17 +40,18 @@ namespace transport_catalogue {
 		stop_to_busnames_[stops_.back().name_];
 	}
 
-	const Stop& TransportCatalogue::GetStopByName(std::string_view stopname) const {
-		return *stopname_to_stop_.at(stopname);
+	const Stop* TransportCatalogue::GetStopByName(std::string_view stopname) const {
+		return stopname_to_stop_.at(stopname);
 	}
 
-	std::vector<Bus*> TransportCatalogue::GetBuses() {
-		std::vector<Bus*> buses;
-		for (auto& bus : buses_) {
-			buses.push_back(&bus);
-		}
-		return buses;
+	const std::unordered_map<std::string_view, Bus*>& TransportCatalogue::GetBuses() const {
+		return busname_to_bus_;
 	}
+
+	const std::unordered_map<std::string_view, Stop*>& TransportCatalogue::GetStops() const {
+		return stopname_to_stop_;
+	}
+
 
 	void TransportCatalogue::AddStopForBus(std::string_view busname, std::string_view stopname) {
 		Bus* bus = busname_to_bus_.at(busname);
@@ -69,6 +70,13 @@ namespace transport_catalogue {
 		return res;
 	}
 
+	void TransportCatalogue::SetRoutingSettings(RoutingSettings&& settings) {
+		routing_settings_ = std::move(settings);
+	}
+
+	RoutingSettings TransportCatalogue::GetRoutingSettings() const {
+		return routing_settings_;
+	}
 
 	double TransportCatalogue::GetRouteLength(std::string_view busname) const {
 		double result = 0;

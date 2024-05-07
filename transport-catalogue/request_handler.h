@@ -4,10 +4,14 @@
 #include <string>
 #include <unordered_set>
 
-#include "transport_catalogue.h"
-#include "json_reader.h"
 #include "domain.h"
+#include "json_builder.h"
+#include "json_reader.h"
 #include "map_renderer.h"
+#include "router.h"
+#include "transport_catalogue.h"
+#include "transport_router.h"
+
 
 namespace transport_catalogue {
 
@@ -27,11 +31,10 @@ namespace transport_catalogue {
 
             void ExecuteStatRequest(std::ostream& out);
 
+            void Router();
             void Render();
             
-            std::string GetMap() {
-                return rendered_map_;
-            }
+            std::optional<std::string> GetMap() const;
                 
         private:
 
@@ -39,10 +42,19 @@ namespace transport_catalogue {
 
             void ApplyStopRequests();
             void ApplyBusRequests();
+            void ApplyRoutingSettings();
+            
+            void ApplySingleBusRequest(json::Builder& builder, const json::Dict& request_data);
+            void ApplySingleStopRequest(json::Builder& builder, const json::Dict& request_data);
+            void ApplySingleMapRequest(json::Builder& builder, const json::Dict& request_data);
+            void ApplySingleRouteRequest(json::Builder& builder, const json::Dict& request_data);
            
             TransportCatalogue& db_;
             const json_reader::JSONReader reader_;
-            std::string rendered_map_;
+            std::optional<std::string> rendered_map_;
+
+            std::unique_ptr<transport_graph::TransportGraph> graph_;
+            std::unique_ptr<transport_graph::TransportRouter> router_;
         };
     } // ------------------ namespace requests ----------------
 

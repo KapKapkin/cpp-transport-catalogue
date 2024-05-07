@@ -22,6 +22,7 @@ namespace transport_catalogue {
 			FillStopRequests();
 			FillStatRequests();
 			FillRenderSettings();
+			FillRoutingSettings();
 		}
 
 		const std::vector<const json::Node*>& JSONReader::GetStatRequests() const {
@@ -34,6 +35,10 @@ namespace transport_catalogue {
 
 		const std::vector<const json::Node*>&  JSONReader::GetStopRequests() const {
 			return stop_requests_;
+		}
+
+		const std::unordered_map<std::string_view, const double>& JSONReader::GetRoutingSettings() const {
+			return routing_settings_;
 		}
 
 		const std::unordered_map<std::string_view, const json::Dict*>& JSONReader::GetRoadDistances() const {
@@ -92,6 +97,15 @@ namespace transport_catalogue {
 
 			for (auto& [setting, data] : render_settings) {
 				render_settings_.insert({ setting, &data });
+			}
+		}
+
+		void JSONReader::FillRoutingSettings() {
+			auto& root = commands_.GetRoot();
+			const json::Dict& routing_settings = root.AsDict().at("routing_settings").AsDict();
+
+			for (auto& [setting, data] : routing_settings) {
+				routing_settings_.insert({ setting, data.AsDouble()});
 			}
 		}
 	} // ------------------ namespace json_reader ----------------
